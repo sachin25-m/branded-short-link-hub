@@ -1,10 +1,15 @@
 const mongoose = require('mongoose');
+const connectDB = require('../config/db');
 
 /**
  * Controller for GET /api/health
  * Reports system health and MongoDB connection status accurately.
  */
 const getHealthStatus = async (req, res) => {
+  if (mongoose.connection.readyState !== 1) {
+    await connectDB();
+  }
+
   const isDbConnected = mongoose.connection.readyState === 1;
 
   if (isDbConnected) {

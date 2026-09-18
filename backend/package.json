@@ -4,6 +4,9 @@
   "description": "Backend API service for Branded Short-Link & Bio-Link Hub",
   "main": "src/server.js",
   "type": "commonjs",
+  "engines": {
+    "node": ">=18.0.0"
+  },
   "scripts": {
     "start": "node src/server.js",
     "dev": "nodemon src/server.js",

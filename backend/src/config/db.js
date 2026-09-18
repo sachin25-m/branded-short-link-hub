@@ -30,28 +30,44 @@ const attachListeners = () => {
 const connectDB = async () => {
   attachListeners();
 
-  const uri = process.env.MONGODB_URI;
+  const rawUri = process.env.MONGODB_URI;
+  let uri = rawUri ? rawUri.trim() : '';
+  if ((uri.startsWith('"') && uri.endsWith('"')) || (uri.startsWith("'") && uri.endsWith("'"))) {
+    uri = uri.slice(1, -1).trim();
+  }
 
-  if (!uri) {
-    console.error('[MongoDB] MONGODB_URI is not configured.');
+  const isConfigured = Boolean(uri);
+  const readyStateBefore = mongoose.connection.readyState;
+
+  console.log(`[Diagnostic Log] MONGODB_URI configured: ${isConfigured ? 'yes' : 'no'}`);
+  console.log(`[Diagnostic Log] mongoose readyState before connect: ${readyStateBefore}`);
+
+  if (!isConfigured) {
+    console.error('[MongoDB] MONGODB_URI is not configured in environment variables.');
     return false;
   }
 
   // Return true if already fully connected
   if (mongoose.connection.readyState === 1) {
+    console.log('[Diagnostic Log] connectDB() called: no (already connected)');
+    console.log(`[Diagnostic Log] mongoose readyState after connect: 1`);
     return true;
   }
 
   // Return existing pending connection promise if in progress
   if (cachedPromise && (mongoose.connection.readyState === 2 || mongoose.connection.readyState === 1)) {
+    console.log('[Diagnostic Log] connectDB() called: yes (awaiting in-flight promise)');
     try {
       await cachedPromise;
-      return mongoose.connection.readyState === 1;
+      const readyStateAfter = mongoose.connection.readyState;
+      console.log(`[Diagnostic Log] mongoose readyState after connect: ${readyStateAfter}`);
+      return readyStateAfter === 1;
     } catch (err) {
       cachedPromise = null;
     }
   }
 
+  console.log('[Diagnostic Log] connectDB() called: yes');
   console.log('[MongoDB] Initiating connection to database...');
 
   try {
@@ -62,10 +78,14 @@ const connectDB = async () => {
 
     cachedPromise = mongoose.connect(uri, opts);
     const conn = await cachedPromise;
+    const readyStateAfter = mongoose.connection.readyState;
+    console.log(`[Diagnostic Log] mongoose readyState after connect: ${readyStateAfter}`);
     console.log(`[MongoDB] Connected successfully: ${conn.connection.host}`);
     return true;
   } catch (error) {
     cachedPromise = null;
+    const readyStateAfter = mongoose.connection.readyState;
+    console.log(`[Diagnostic Log] mongoose readyState after connect: ${readyStateAfter}`);
     console.error(`[MongoDB Connection Error] Connection failed: ${error.message}`);
     return false;
   }
