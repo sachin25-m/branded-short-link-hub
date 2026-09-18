@@ -29,10 +29,11 @@ const attachListeners = () => {
  */
 const connectDB = async () => {
   attachListeners();
+
   const uri = process.env.MONGODB_URI;
 
   if (!uri) {
-    console.error('[MongoDB Error] MONGODB_URI environment variable is missing.');
+    console.error('[MongoDB] MONGODB_URI is not configured.');
     return false;
   }
 
