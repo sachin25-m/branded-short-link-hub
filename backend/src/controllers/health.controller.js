@@ -4,6 +4,7 @@
  */
 const getHealthStatus = (req, res) => {
   return res.status(200).json({
+    status: 'ok',
     success: true,
     message: 'API is running',
   });
