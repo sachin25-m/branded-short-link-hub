@@ -198,6 +198,7 @@ const login = async (req, res, next) => {
       success: true,
       message: 'Login successful.',
       accessToken,
+      refreshToken,
       user,
     });
   } catch (error) {
@@ -211,7 +212,10 @@ const login = async (req, res, next) => {
  */
 const refresh = async (req, res, next) => {
   try {
-    const refreshToken = req.cookies.refreshToken;
+    const refreshToken =
+      req.cookies?.refreshToken ||
+      req.body?.refreshToken ||
+      req.headers['x-refresh-token'];
 
     if (!refreshToken) {
       return res.status(401).json({
@@ -220,9 +224,13 @@ const refresh = async (req, res, next) => {
       });
     }
 
+    const secret =
+      process.env.JWT_REFRESH_SECRET ||
+      'dev_jwt_refresh_secret_super_secure_key_32bytes_min!';
+
     let decoded;
     try {
-      decoded = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET);
+      decoded = jwt.verify(refreshToken, secret);
     } catch (err) {
       res.clearCookie('refreshToken', getClearCookieOptions());
       return res.status(401).json({

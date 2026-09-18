@@ -1,6 +1,13 @@
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 
+const JWT_ACCESS_SECRET =
+  process.env.JWT_ACCESS_SECRET ||
+  'dev_jwt_access_secret_super_secure_key_32bytes_min!';
+const JWT_REFRESH_SECRET =
+  process.env.JWT_REFRESH_SECRET ||
+  'dev_jwt_refresh_secret_super_secure_key_32bytes_min!';
+
 /**
  * Generate Access Token (EXACTLY 15 minutes lifetime).
  */
@@ -10,7 +17,7 @@ const generateAccessToken = (user) => {
       userId: user._id.toString(),
       email: user.email,
     },
-    process.env.JWT_ACCESS_SECRET,
+    JWT_ACCESS_SECRET,
     { expiresIn: '15m' }
   );
 };
@@ -25,7 +32,7 @@ const generateRefreshToken = (userId, familyId) => {
       familyId,
       jti: crypto.randomUUID(),
     },
-    process.env.JWT_REFRESH_SECRET,
+    JWT_REFRESH_SECRET,
     { expiresIn: '7d' }
   );
 };

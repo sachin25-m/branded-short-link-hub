@@ -16,16 +16,20 @@ const authenticateToken = async (req, res, next) => {
     }
 
     const token = authHeader.split(' ')[1];
-    if (!token) {
+    if (!token || token === 'null' || token === 'undefined') {
       return res.status(401).json({
         success: false,
-        message: 'Access denied. Token is missing.',
+        message: 'Access denied. Token is missing or invalid.',
       });
     }
 
+    const secret =
+      process.env.JWT_ACCESS_SECRET ||
+      'dev_jwt_access_secret_super_secure_key_32bytes_min!';
+
     let decoded;
     try {
-      decoded = jwt.verify(token, process.env.JWT_ACCESS_SECRET);
+      decoded = jwt.verify(token, secret);
     } catch (err) {
       if (err.name === 'TokenExpiredError') {
         return res.status(401).json({
