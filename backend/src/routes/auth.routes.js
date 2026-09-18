@@ -11,8 +11,12 @@ const {
 } = require('../controllers/auth.controller');
 const { authenticateToken } = require('../middlewares/auth.middleware');
 const { authRateLimiter } = require('../middlewares/rateLimiter');
+const { ensureDbConnected } = require('../middlewares/dbCheck.middleware');
 
 const router = express.Router();
+
+// Apply DB connection check to all auth routes
+router.use(ensureDbConnected);
 
 // Authentication Endpoints
 router.post('/signup', authRateLimiter, signup);

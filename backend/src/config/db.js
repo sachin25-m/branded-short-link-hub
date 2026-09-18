@@ -1,16 +1,49 @@
 const mongoose = require('mongoose');
 
+let cachedPromise = null;
+
 /**
- * Connects to MongoDB database using Mongoose.
- * Logs connection status cleanly.
+ * Connects to MongoDB using Mongoose with connection caching for serverless/Vercel functions.
+ * @returns {Promise<boolean>}
  */
 const connectDB = async () => {
+  const uri = process.env.MONGODB_URI;
+
+  if (!uri) {
+    console.error('[MongoDB Error] MONGODB_URI environment variable is missing.');
+    return false;
+  }
+
+  // Return true if already fully connected
+  if (mongoose.connection.readyState === 1) {
+    return true;
+  }
+
+  // Return existing pending connection promise if in progress
+  if (cachedPromise && (mongoose.connection.readyState === 2 || mongoose.connection.readyState === 1)) {
+    try {
+      await cachedPromise;
+      return mongoose.connection.readyState === 1;
+    } catch (err) {
+      cachedPromise = null;
+    }
+  }
+
+  console.log('[MongoDB] Initiating connection to database...');
+
   try {
-    const conn = await mongoose.connect(process.env.MONGODB_URI);
+    const opts = {
+      serverSelectionTimeoutMS: 5000, // 5 second timeout for cluster selection
+    };
+
+    cachedPromise = mongoose.connect(uri, opts);
+    const conn = await cachedPromise;
     console.log(`[MongoDB] Connected successfully: ${conn.connection.host}`);
+    return true;
   } catch (error) {
-    console.error(`[MongoDB] Connection error: ${error.message}`);
-    // Log error cleanly without crashing process so API stays up even if DB is pending
+    cachedPromise = null;
+    console.error(`[MongoDB Connection Error] Connection failed: ${error.message}`);
+    return false;
   }
 };
 
